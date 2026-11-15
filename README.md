@@ -1,5 +1,7 @@
 # Dubai AI Travel Planner (LangGraph Multi-Agent System)
 
+**Live Application:** [Open Dubai AI Travel Planner on Streamlit](https://multi-agent-rtyfkferm7sdyvte9q3syt.streamlit.app/) — `https://multi-agent-rtyfkferm7sdyvte9q3syt.streamlit.app/`
+
 A stateful, fault-tolerant **multi-agent AI travel planner for Dubai (1–7 days, AED budgets)** built with **LangGraph**, **LangChain**, **Pydantic v2**, and **Streamlit**.
 
 Five specialized agents collaborate across parallel fan-out branches, barrier joins, deterministic domain validation, and bounded revision loops—backed by a **3-tier offline-first data layer** (free open APIs → SQLite TTL cache → curated Dubai dataset) and a **dual-LLM architecture** (**Groq `openai/gpt-oss-120b`** for planning + **Google Gemini `gemini-3.8-flash`** for review) that can also run end-to-end in zero-key deterministic mode.
@@ -216,92 +218,3 @@ Multi-Agent/
 ├── problemStatement.md                 # MVP scope & acceptance criteria
 └── research.md                         # Dubai data source, transit & climate research
 ```
-
----
-
-## Setup & Running Locally
-
-### 1. Install Dependencies
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-### 2. Configure Environment Variables (Optional for Zero-Key Mode)
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` to enable Groq + Gemini:
-
-```env
-# Primary Agents (Orchestrator, Destination Research, Logistics, Budget)
-LLM_PROVIDER=groq
-LLM_MODEL=openai/gpt-oss-120b
-LLM_TEMPERATURE=0.2
-GROQ_API_KEY=your-groq-api-key-here
-
-# Review Agent
-REVIEW_LLM_PROVIDER=google_genai
-REVIEW_LLM_MODEL=gemini-3.8-flash
-REVIEW_LLM_TEMPERATURE=0.1
-GOOGLE_API_KEY=your-google-api-key-here
-
-# Workflow & Data Settings
-MAX_REVISIONS=2
-OFFLINE_MODE=false
-```
-
-> **Zero-key mode:** If `GROQ_API_KEY` and `GOOGLE_API_KEY` are omitted or left as placeholders, the planner still executes end-to-end using deterministic request parsing, deterministic rule validation, and the curated Dubai dataset.
-
-### 3. Launch the Streamlit App
-
-```bash
-streamlit run app.py
-```
-
----
-
-## Deploying to Streamlit Community Cloud
-
-[app.py](app.py) automatically syncs Streamlit Secrets into environment variables on startup and puts `src/` on `sys.path`.
-
-1. Sign in at [share.streamlit.io](https://share.streamlit.io) with GitHub.
-2. Click **Create app → Deploy a public app from GitHub**.
-3. Select repository `imnashraf/Multi-Agent`, branch `main`, and main file path `app.py`.
-4. Open **Advanced settings**, choose **Python 3.12**, and paste your secrets in TOML format:
-   ```toml
-   LLM_PROVIDER = "groq"
-   LLM_MODEL = "openai/gpt-oss-120b"
-   LLM_TEMPERATURE = "0.2"
-   GROQ_API_KEY = "YOUR_GROQ_API_KEY"
-
-   REVIEW_LLM_PROVIDER = "google_genai"
-   REVIEW_LLM_MODEL = "gemini-3.8-flash"
-   REVIEW_LLM_TEMPERATURE = "0.1"
-   GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
-
-   MAX_REVISIONS = "2"
-   OFFLINE_MODE = "false"
-   ```
-5. Click **Save** and **Deploy!**.
-
----
-
-## Running Tests
-
-Run the full test suite (all 35 tests run offline/deterministically without external network or paid API dependencies):
-
-```bash
-pytest
-```
-
-Test coverage spans:
-- `tests/test_phase1_schemas.py` — Settings loading, provider defaults, and Pydantic v2 validation rules.
-- `tests/test_data_fallback.py` — SQLite cache hits/expiration, Overpass/OSRM/Open-Meteo fallbacks, RTA Nol zone/day-pass fares, and seasonal advisories.
-- `tests/test_validation.py` — Budget math/caps, duration parity, duplicate POIs, overlapping time slots, and crowd/interest preference checks.
-- `tests/test_graph_workflow.py` — Parallel fan-out & barrier join execution, state reducers, and bounded revision routing.
-- `tests/test_e2e_mvp.py` — End-to-end planning scenarios including budget-overrun self-correction and full trace verification.
